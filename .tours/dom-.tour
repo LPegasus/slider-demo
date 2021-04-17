@@ -1,0 +1,63 @@
+{
+  "$schema": "https://aka.ms/codetour-schema",
+  "title": "DOM 结构",
+  "steps": [
+    {
+      "title": "轮播组件 DOM 结构",
+      "description": "此流程讲述轮播组件的 DOM 结构实现"
+    },
+    {
+      "file": "src/App.tsx",
+      "description": "视窗部分。轮播窗口大小由此元素确定。\n\n如果要自适应，用户可以通过传入不同的 sliderWidth 自行实现。",
+      "line": 170,
+      "selection": {
+        "start": {
+          "line": 170,
+          "character": 21
+        },
+        "end": {
+          "line": 170,
+          "character": 29
+        }
+      },
+      "title": "viewport"
+    },
+    {
+      "file": "src/App.tsx",
+      "description": "container 节点是存放所有内容的真正容器。\n### 宽度\n通过 \"%\" 宽度，根据父容器 viewport 宽度自适应。container 宽度 = 父容器宽度的 100% * 图片数量。\n### 位移\n翻页效果通过移动 container 的位置来实现。具体移动使用 transform 实现。",
+      "line": 178,
+      "title": "container"
+    },
+    {
+      "file": "src/App.css",
+      "description": "# viewport css\n\n### `overflow: hidden`\n确保 width = offsetWidth = container.width。当出现滚动条的时候，viewport 的宽度和外边距宽不一致。",
+      "line": 6
+    },
+    {
+      "file": "src/App.css",
+      "description": "# container css\n\n### `font-size: 0`\n避免子元素是 `display:inline-block` 的情况下有些浏览器版本会出现空格字距的问题。\n\n### `white-space: nowrap`\n确保尾部 inline-block 元素不换行\n\n### `height: 100%`\n高度与父容器一致\n\n### `overflow: hidden`\n确保 container 宽度与外边距宽一致",
+      "line": 13
+    },
+    {
+      "file": "src/App.css",
+      "description": "# 禁用 iOS 图片放大预览\n避免不期望的浏览器默认行为",
+      "line": 21
+    },
+    {
+      "file": "src/App.css",
+      "description": "# 图片对齐\n高度不同的图片，会导致默认 baseline 对齐方式图片不整齐的情况。按照顶部对齐处理。",
+      "line": 17
+    },
+    {
+      "file": "src/App.tsx",
+      "description": "# 防止 PC 端图片影子拖拽\n\n在 PC 端，拖拽 `img` 标签会带有原图的影子。这里需要使用 javascript 代码禁用浏览器图片的拖拽默认行为。",
+      "line": 31
+    },
+    {
+      "file": "src/App.css",
+      "description": "# 其他\n撑开页面高度，时文档有纵轴滚动条，让组件在测试时，可以测 y 轴滚动和 x 轴滚动同时存在的场景",
+      "line": 24
+    }
+  ],
+  "ref": "main"
+}

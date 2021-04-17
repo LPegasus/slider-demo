@@ -1,0 +1,66 @@
+{
+  "$schema": "https://aka.ms/codetour-schema",
+  "title": "无限滚动",
+  "steps": [
+    {
+      "title": "此流程介绍无限滚动的实现",
+      "description": "无限滚动的实现要点就是第一张的前面补最后一张图，最后一张图的后一张补第一张图。在恰当的实际，替换补图的位置变成原图位置。\n\n比如原图为：A、B、C\n\n补图之后为：C'、A、B、C、A'"
+    },
+    {
+      "file": "src/App.tsx",
+      "description": "# 补图逻辑\n`[imgs[imgs.length - 1]]` 为最后一张图\n\n`...imgs` 为原图\n\n`imgs[0]` 为首图\n\n使用 `useMemo` 在每次 `props.imgs` 父组件传入的图片列表变更时，重新计算所用图片列表。",
+      "line": 27
+    },
+    {
+      "file": "src/App.tsx",
+      "description": "# 需要存储的轮播状态\n\n创建一个 `movingState` 的变量，存放所有与轮播相关的状态。\n\n## 字段解释\n- timer - 存放轮播递归调用的定时器 ID，用来在某些时刻暂停轮播\n- imgIndex - 当前展示的是轮播列表图中的哪张图\n- isTouching - 标记是否在触摸过程中\n- basePos - 每次计算 translateX 偏移多少的基础位置，此位置可能是 transition 还没执行完的时候的位置（比如，轮播动画播到一半，用户按住轮播组件，需要暂停当前轮播动画\n- isTransition - 是否在 transition 动效播放过程中\n- startEvent - 记录 pointerstart 事件，主要确定手指的初始位置\n- lastEvent - 记录最近一次 pointer 事件，做手势判断用\n- axis - 标记移动的坐标轴方向，是纵轴移动还是横轴移动\n- direction - 记录本次拖拽手势的横轴方向\n- changeType - 记录手势识别的状态是翻页还是不翻页，前一页还是后一页\n- range - 记录手势轨迹的最左端与最右端位置，来协助判断是否翻页，还是翻到一半用户想取消翻页",
+      "line": 52
+    },
+    {
+      "file": "src/App.tsx",
+      "description": "# 绑定手势事件\n\n这里使用了 PointerEvent 事件，作为主要手势事件类型。最新的浏览器都以支持 PointerEvent。\n\n## 手势类型说明\n- pointerdown - 用户开始触摸屏幕\n- pointermove - 用户拖拽屏幕\n- pointerup - 用户结束触摸屏幕\n- pointercancel - 用户因为各种原因中断了触摸事件，可能是系统弹窗 focus 变化、可能是切换到了其他应用、可能是触发了 pointerleave（pointerleave 必定触发 pointercancel）、可能是按了 home 键\n- pointerleave - 用户手指移到 container 区域外\n- transitionend - css transition 动效播放完成\n\n拖拽手势是非常复杂的一种异步操作场景。通常情况下需要使用流式计算来识别用户手势的一图到底是什么。流式计算就会与时间相关，这也是为什么移动端之前会有 300ms 点击延时的问题，因为浏览器要用 300ms 等待、并判断用户是不是双击意图。\n\n有兴趣的同学可以去学习一下 [ReactiveX](https://reactivex.io/) 流式计算工具，此工具被广泛应用于 UI 交互中。此 demo 就先简单记录一些标志位来判断手势意图。",
+      "line": 156
+    },
+    {
+      "file": "src/App.tsx",
+      "description": "# 解绑手势事件\n使用 `useEffect` 中的函数如果有副作用（I/O、定时器、事件绑定），需要返回一个函数对副作用进行清理。\n\n上面我们用到了事件绑定和定时器，所以这里需要解绑事件和清理定时器。",
+      "line": 165
+    },
+    {
+      "file": "src/App.tsx",
+      "description": "# 开始拖拽\n当 pointerdown 事件触发在 container 元素上，说明用户按下了我们的组件，此时首先调用 `clearTimeout` 停止轮播。\n\n此时，可能是 transition 的中间态，所以我们需要调用 `getBoundingClientRect` 函数获取当前 DOM 元素的真实位置。\n\n根据 viewport 和 container 元素的 x 轴位置，我们得到 translateX 偏移量的基准值。后续如果有 move 操作，那么 move 操作的 deltaX 需要跟 basePos 相加，来获取 container 跟着手势移动的位置。\n\nL71 使用 `requestAnimationFrame`(**rAF**) 确保性能。",
+      "line": 77
+    },
+    {
+      "file": "src/App.tsx",
+      "description": "# 拖拽中 - 判断是否需要响应此次手势\n\n1. L80 先判断是否先经过了 pointerstart 将 isTouching 设置为了 true。在浏览器中，所有类型的事件都是可以手动派发的，为了避免其他逻辑派发的假事件影响，这里需要稍微校验一下。\n2. L81-98 判断是否是 x 轴方向的拖拽，如果不是，直接执行 handleEnd 函数，结束本次手势识别，并时轮播组件归位。",
+      "line": 98
+    },
+    {
+      "file": "src/App.tsx",
+      "description": "# 拖拽中 - 将浏览器的手势响应方向固定为 x 轴\n这里也是一个副作用，操作了 body 的 style，所以在 useEffect 函数的返回函数中，需要清楚此副作用",
+      "line": 99
+    },
+    {
+      "file": "src/App.tsx",
+      "description": "# 拖拽中 - 判断是否翻页\n\n判断基于距离阈值和速度阈值。这块具体的阈值需要调参的过程，这里先大致设一下。\n\n一旦 changeType 有了确定的值，我们就不需要再执行判断了。为了保证 60fps，我们每一帧的间隔约 16.7ms。这 16.7ms 包含 js 执行、浏览器响应用户交互、渲染管线执行等步骤，所以真正留给 js 执行的时间大概只有 8ms 到 10ms。在连续事件中（pointermove wheel scroll），我们应尽一切可能减少每一次事件回调函数的计算量。",
+      "line": 108
+    },
+    {
+      "file": "src/App.tsx",
+      "description": "# 拖拽中 - 更新 container 位置\n\n由于 rAF 其实就是个定时器，所以在异步回调的时候，需要去查看一下回调之时，是否用户还在触摸中。如果已经不触摸了，此时可能已经开始播放 transition 动画，若执行 transform 更新，会影响动画效果，导致翻页动画停止在中间位置。",
+      "line": 115
+    },
+    {
+      "file": "src/App.tsx",
+      "description": "# 拖拽结束 - 恢复副作用，重置 movingState",
+      "line": 123
+    },
+    {
+      "file": "src/App.tsx",
+      "description": "# 拖拽结束 - 播放动画\n\n### 判断用户时候有撤回移动的手势\nL249 代码块通过判断 pointerup 时的位置在 movingState.range 中与两边的位置关系，来确定用户是否有回撤拖拽的手势。如果回撤距离超过 16px，就判为不翻页。\n\n### 判断是否触发翻页下一张图是补图\nL262 判断是否是补图，如果是补图，先重置动画播放的开始位置到真图位置，再播放动画。\n\n这里没有在播放完成后再替换真图位置是因为，transition 过程中，如果还在补图的位置，此时用户去往补图的下一张或者前一张拖动，会看到空白。所以必须在播放前，确保图片位置已经替换成真图位置。\n\n### L276-277 代码为啥不放在 L283 统一执行\n这个与 rAF 执行时机有关，详细可以看一下 rAF 具体的 API，关注一下它的执行时机是什么时候。",
+      "line": 284
+    }
+  ],
+  "ref": "main"
+}

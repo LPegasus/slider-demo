@@ -1,0 +1,47 @@
+{
+  "$schema": "https://aka.ms/codetour-schema",
+  "title": "轮播 - 计时器",
+  "steps": [
+    {
+      "file": "src/App.tsx",
+      "description": "存储计时器 ID。\n\n用户在交互区域开始拖动或者鼠标按下时，需要清理掉计时器，从而禁止自动轮播。",
+      "line": 41,
+      "title": "创建存放计时器 ID 的变量"
+    },
+    {
+      "file": "src/App.tsx",
+      "description": "计时器启动函数。这个函数有两个调用时机：\n1. 组件挂载后\n2. 组件翻页动画之后",
+      "line": 148,
+      "title": "启动轮播计时器的时机 1"
+    },
+    {
+      "file": "src/App.tsx",
+      "description": "在每次翻页动画播放完毕后，启动轮播计时器。\n\n这里的动画可能是定时轮播触发，也可能是用户拖动结束之后触发。",
+      "line": 145,
+      "title": "启动轮播计时器的时机 2"
+    },
+    {
+      "file": "src/App.tsx",
+      "description": "用户开始拖动时，取消轮播",
+      "line": 65,
+      "selection": {
+        "start": {
+          "line": 61,
+          "character": 11
+        },
+        "end": {
+          "line": 61,
+          "character": 22
+        }
+      },
+      "title": "关闭轮播计时器的时机 1"
+    },
+    {
+      "file": "src/App.tsx",
+      "description": "组件卸载关闭轮播计时器",
+      "line": 165,
+      "title": "关闭轮播计时器的时机 2"
+    }
+  ],
+  "ref": "main"
+}

@@ -6,7 +6,6 @@
 }
 
 .container {
-  contain: strict;
   font-size: 0;
   white-space: nowrap;
   height: 100%;

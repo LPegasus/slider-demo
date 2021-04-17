@@ -51,6 +51,7 @@ function Slider(props: SliderPropsType) {
       range: [Infinity, 0] as [number, number],
     };
 
+    /** 更新 movingState 的最后一次 event，计算移动范围 */
     const updateEventToMovingState = (ev: PointerEvent) => {
       const [xLow, xHigh] = movingState.range;
       movingState.lastEvent = ev;
@@ -67,8 +68,10 @@ function Slider(props: SliderPropsType) {
 
       movingState.basePos = x2 - x1; // 计算出当前 container translateX 的值
       movingState.isTouching = true;
-      container.style.transition = "";
-      container.style.transform = `translateX(${movingState.basePos}px)`;
+      requestAnimationFrame(() => {
+        container.style.transition = "";
+        container.style.transform = `translateX(${movingState.basePos}px)`;
+      });
       movingState.startEvent = ev;
       updateEventToMovingState(ev);
     };
@@ -84,6 +87,7 @@ function Slider(props: SliderPropsType) {
         if (!axisAndDirection) {
           return;
         }
+        movingState.isTransition = true;
         const { axis, direction } = axisAndDirection;
         if (axis === "y") {
           handleEnd(ev);
@@ -105,9 +109,9 @@ function Slider(props: SliderPropsType) {
 
       requestAnimationFrame(() => {
         if (!movingState.isTouching) return; // 如果回调的时候已经没有在 moving 手势中，不要执行 transform
-        container.style.transform = `translateX(${Math.floor(
+        container.style.transform = `translateX(${
           movingState.basePos + deltaX
-        )}px)`;
+        }px)`;
       });
 
       updateEventToMovingState(ev);
@@ -115,25 +119,30 @@ function Slider(props: SliderPropsType) {
 
     const handleEnd = (ev: PointerEvent) => {
       updateEventToMovingState(ev);
+      lockTouchActionDirection(false);
       calcImageIndexAndPlayTransition(movingState, container, appendedImgs);
     };
 
     const handleCancel = (ev: PointerEvent) => {
+      if (movingState.isTransition) {
+        return;
+      }
       resetMovingState(movingState);
       lockTouchActionDirection(false);
       playTransition(container, sliderWidth, movingState.imgIndex);
     };
 
     const handleLeave = (ev: PointerEvent) => {
-      handleCancel(ev);
+      if (movingState.isTransition && movingState.isTouching) {
+        handleEnd(ev);
+      }
     };
 
     const handleTransitionEnd = (ev: TransitionEvent) => {
+      if (movingState.isTouching) {
+        return;
+      }
       startAutoPlay(movingState, container, appendedImgs);
-    };
-
-    const handleTransitionStart = (ev: TransitionEvent) => {
-      movingState.isTransition = true;
     };
 
     startAutoPlay(movingState, container, appendedImgs);
@@ -144,7 +153,6 @@ function Slider(props: SliderPropsType) {
     container.addEventListener("pointercancel", handleCancel);
     container.addEventListener("pointerleave", handleLeave);
     container.addEventListener("transitionend", handleTransitionEnd);
-    container.addEventListener("transitionstart", handleTransitionStart);
 
     return () => {
       lockTouchActionDirection(false);
@@ -152,36 +160,33 @@ function Slider(props: SliderPropsType) {
       container.removeEventListener("pointermove", handleMove);
       container.removeEventListener("pointerup", handleEnd);
       container.removeEventListener("pointercancel", handleCancel);
-      container.removeEventListener("pointerleave", handleLeave);
+      container.addEventListener("pointerleave", handleLeave);
       container.removeEventListener("transitionend", handleTransitionEnd);
-      container.removeEventListener("transitionstart", handleTransitionStart);
       window.clearTimeout(movingState.timer);
     };
   }, [...imgs]);
 
   return (
-    <>
-      <div className="viewport" style={{ width: sliderWidth }}>
-        <div
-          ref={containerRef}
-          className="container"
-          style={{
-            width: appendedImgs.length * 100 + "%",
-            transform: `translateX(${-sliderWidth}px)`,
-          }}
-        >
-          {appendedImgs.map((url, i) => (
-            <img
-              key={i}
-              src={url}
-              alt=""
-              style={{ width: sliderWidth, height: "100%" }}
-              onPointerDown={preventImageDrag}
-            />
-          ))}
-        </div>
+    <div className="viewport" style={{ width: sliderWidth }}>
+      <div
+        ref={containerRef}
+        className="container"
+        style={{
+          width: appendedImgs.length * 100 + "%",
+          transform: `translateX(${-sliderWidth}px)`,
+        }}
+      >
+        {appendedImgs.map((url, i) => (
+          <img
+            key={i}
+            src={url}
+            alt=""
+            style={{ width: sliderWidth, height: "100%" }}
+            onPointerDown={preventImageDrag}
+          />
+        ))}
       </div>
-    </>
+    </div>
   );
 }
 
@@ -223,7 +228,7 @@ function lockTouchActionDirection(lock: boolean) {
 
 function playTransition(dom: HTMLElement, width: number, index: number) {
   return requestAnimationFrame(() => {
-    dom.style.transition = "transform linear 0.25s";
+    dom.style.transition = "transform linear 0.3s";
     dom.style.transform = `translateX(${index * -width}px)`;
   });
 }
@@ -262,19 +267,20 @@ function calcImageIndexAndPlayTransition(
     const imgIndex = movingState.imgIndex;
     movingState.imgIndex = imgIndex === 0 ? appendedImgs.length - 2 : 1;
     const offsetX = (lastEvent?.x ?? 0) - (startEvent?.x ?? 0);
-    Object.assign(container.style, {
-      transition: "",
-      transform: `translateX(${
+    requestAnimationFrame(() => {
+      container.style.transition = "";
+      const translateX =
         (movingState.imgIndex + (imgIndex === 0 ? 1 : -1)) * -sliderWidth +
-        offsetX
-      }px)`,
+        offsetX;
+      container.style.transform = `translateX(${translateX}px)`;
+      const finalIndexToPlay = movingState.imgIndex;
+      playTransition(container, sliderWidth, finalIndexToPlay);
     });
+    return;
   }
 
   const finalIndexToPlay = movingState.imgIndex;
-  requestAnimationFrame(() => {
-    playTransition(container, sliderWidth, finalIndexToPlay);
-  });
+  playTransition(container, sliderWidth, finalIndexToPlay);
 }
 
 function startAutoPlay(
